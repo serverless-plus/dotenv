@@ -3,11 +3,11 @@ const dotenv = require('dotenv')
 const ensureIterable = require('type/iterable/ensure')
 const ensureString = require('type/string/ensure')
 const { Component } = require('@serverless/core')
-const { program } = require('commander')
+const yargsParser = require('yargs-parser')
 
-program.option('--debug', 'Debug component')
-program.option('--env <env>', 'Target dotenv file', 'development')
-program.parse(process.argv)
+const cmdArgs = yargsParser(process.argv)
+
+const specialArgs = ['_', 'env']
 
 class DotenvComponent extends Component {
   getEnvironment() {
@@ -15,7 +15,7 @@ class DotenvComponent extends Component {
       return process.env.NODE_ENV
     }
 
-    const { env } = program
+    const { env } = cmdArgs
 
     if (env) {
       return env
@@ -72,13 +72,24 @@ class DotenvComponent extends Component {
     } else {
       context.debug('DOTENV: Could not find .env file.')
     }
+    // add custom args
+    const customArgs = {}
+    Object.keys(cmdArgs).forEach((key) => {
+      if (specialArgs.indexOf(key) === -1) {
+        const temp = cmdArgs[key]
+        process.env[key] = temp
+        customArgs[key] = temp
+      }
+    })
 
     state.envFileName = envFileName
+    state.customArgs = customArgs
     this.state = state
     await this.save()
 
     return {
-      env: envVars
+      env: envVars,
+      customArgs
     }
   }
 
