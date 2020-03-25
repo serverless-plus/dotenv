@@ -48,6 +48,16 @@ Or, like this:
 $ serverless --debug --env development
 ```
 
+## Inject custom arguments to command
+
+You can directly run deploy command with custom arguments:
+
+```bash
+$ serverless --debug --custom abc --custom1 123
+```
+
+Then you can use by `process.env.custom` and `process.env.custom1`
+
 ## Options
 
 #### Complete configuration in `serverless.yml`
