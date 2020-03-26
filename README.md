@@ -7,14 +7,14 @@
 
 Inspired by [serverless-dotenv-plugin](https://github.com/colynb/serverless-dotenv-plugin).
 
-Preload environment variables into serverless. If you have variables stored in a .env file that you want loaded into your serverless yaml config. This will allow you to reference them as \${env:VAR_NAME} inside your config.
+Preload environment variables into serverless. If you have variables stored in a .env file that you want loaded into your serverless yaml config. This will allow you to reference them as \${Dotenv.env.VAR_NAME} inside your config(If you ).
 
 ## Setup
 
 Add `@slsplus/dotenv` in your `serverless.yml`, as below:
 
 ```yml
-MyDotenv:
+Dotenv:
   component: '@slsplus/dotenv'
 ```
 

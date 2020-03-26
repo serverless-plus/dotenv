@@ -1,4 +1,5 @@
 const fs = require('fs')
+const path = require('path')
 const dotenv = require('dotenv')
 const ensureIterable = require('type/iterable/ensure')
 const ensureString = require('type/string/ensure')
@@ -29,16 +30,48 @@ class DotenvComponent extends Component {
       return envFile
     }
     const env = this.getEnvironment()
-    const basePath = envPath ? envPath : process.cwd()
+    const basePath = envPath
+      ? path.isAbsolute(envPath)
+        ? envPath
+        : path.join(process.cwd(), envPath)
+      : process.cwd()
     const defaultPath = `${basePath}/.env`
-    const path = `${basePath}/.env.${env}`
+    const filename = `${basePath}/.env.${env}`
 
-    return fs.existsSync(path) ? path : defaultPath
+    return fs.existsSync(filename) ? filename : defaultPath
+  }
+
+  parseEnvVariable(str) {
+    if (!str) {
+      return str
+    }
+    const envReg = /\${env:([^}]+)}/g
+    const res = str.replace(envReg, (part, key) => {
+      if (part) {
+        if (process.env.hasOwnProperty(key)) {
+          const val = process.env[key]
+          return val
+        }
+        throw new Error(`Unknow environment variable ${key}`)
+      }
+    })
+    return res
   }
 
   async default(inputs = {}) {
-    const envFile = ensureString(inputs.envFile, { default: '' })
-    const envPath = ensureString(inputs.envPath, { default: '' })
+    // add custom args
+    const customArgs = {}
+    Object.keys(cmdArgs).forEach((key) => {
+      if (specialArgs.indexOf(key) === -1) {
+        const temp = cmdArgs[key]
+        process.env[key] = temp
+        customArgs[key] = temp
+      }
+    })
+
+    const envFile = ensureString(this.parseEnvVariable(inputs.envFile), { default: '' })
+    const envPath = ensureString(this.parseEnvVariable(inputs.envPath), { default: '' })
+
     const exclude = ensureIterable(inputs.exclude, { default: [], ensureItem: ensureString })
 
     const { context } = this
@@ -72,15 +105,6 @@ class DotenvComponent extends Component {
     } else {
       context.debug('DOTENV: Could not find .env file.')
     }
-    // add custom args
-    const customArgs = {}
-    Object.keys(cmdArgs).forEach((key) => {
-      if (specialArgs.indexOf(key) === -1) {
-        const temp = cmdArgs[key]
-        process.env[key] = temp
-        customArgs[key] = temp
-      }
-    })
 
     state.envFileName = envFileName
     state.customArgs = customArgs
